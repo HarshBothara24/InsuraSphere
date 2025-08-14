@@ -1,6 +1,6 @@
 import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { Policy } from '@/types/policy';
+import { db } from '../firebase';
+import { Policy } from '../../types/policy';
 
 export class PolicyService {
   private static COLLECTION_NAME = 'policies';

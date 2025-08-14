@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, getDoc, writeBatch, doc } from 'firebase/firestore';
 import { getMessaging, getToken } from 'firebase/messaging';
 
 interface NotificationPreference {
@@ -22,7 +22,7 @@ interface Notification {
 
 export class NotificationService {
   private static instance: NotificationService;
-  private messaging;
+  private messaging: ReturnType<typeof getMessaging> | null = null;
 
   private constructor() {
     if (typeof window !== 'undefined') {
@@ -41,6 +41,9 @@ export class NotificationService {
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
+        if (!this.messaging) {
+          throw new Error('Messaging service not initialized');
+        }
         const token = await getToken(this.messaging, {
           vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY
         });
@@ -60,10 +63,12 @@ export class NotificationService {
       if (!userPrefs) return;
 
       // Get policy details
-      const policyDoc = await db.collection('policies').doc(policyId).get();
+      const policyDoc = await getDoc(doc(db, 'policies', policyId));
       if (!policyDoc.exists) return;
 
       const policy = policyDoc.data();
+      if (!policy) return;
+
       const message = `Your ${policy.type} insurance policy (${policy.policyNumber}) is due for renewal on ${policy.endDate}.`;
 
       // Create notification records
@@ -106,9 +111,9 @@ export class NotificationService {
       }
 
       // Save notifications to Firestore
-      const batch = db.batch();
+      const batch = writeBatch(db);
       notifications.forEach(notification => {
-        const ref = db.collection('notifications').doc();
+        const ref = doc(collection(db, 'notifications'));
         batch.set(ref, notification);
       });
       await batch.commit();
@@ -122,8 +127,8 @@ export class NotificationService {
 
   private async getUserPreferences(userId: string): Promise<NotificationPreference | null> {
     try {
-      const prefsDoc = await db.collection('notificationPreferences').doc(userId).get();
-      return prefsDoc.exists ? prefsDoc.data() as NotificationPreference : null;
+      const prefsDoc = await getDoc(doc(db, 'notificationPreferences', userId));
+      return prefsDoc.exists() ? (prefsDoc.data() as NotificationPreference) : null;
     } catch (error) {
       console.error('Error getting user preferences:', error);
       return null;

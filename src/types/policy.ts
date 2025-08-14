@@ -1,4 +1,5 @@
 export interface Policy {
+  type: "Life Insurance" | "Health Insurance" | "Vehicle Insurance" | "Property Insurance";
   id: string;
   name: string;
   description: string;

@@ -1,4 +1,4 @@
-import { Policy } from '@/types/policy';
+import { Policy } from '../types/policy';
 
 interface UserPreferences {
   age: number;

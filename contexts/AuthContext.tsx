@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { 
   User,
@@ -7,7 +9,7 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { auth, db } from '../src/lib/firebase';
 
 export type UserRole = 'user' | 'insurer' | 'admin';
 
